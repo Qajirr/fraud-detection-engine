@@ -1,0 +1,27 @@
+name: fraud-detection-engine
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - polars
+  - pandas
+  - pyarrow
+  - numpy
+  - scipy
+  - scikit-learn
+  - lightgbm
+  - xgboost
+  - plotly
+  - networkx
+  - shap
+  - optuna
+  - ipykernel
+  - jupyterlab
+  - nbformat
+  - ruff
+  - pytest
+  - pip
+  - pip:
+    - catboost
+    - torch

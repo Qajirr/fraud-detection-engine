@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Datos crudos y artefactos voluminosos (>100MB / Parquet)
+data/*.csv
+data/*.parquet
+*.csv
+*.parquet
+*.feather
+*.h5
+*.pkl
+*.joblib
+!data/.gitkeep
+
+# Bitácoras internas de desarrollo con IA y notas de sesión (conservar solo en local)
+handoff/
+*.log
+gemini.md
+informacion.md
+
+# Documentos propietarios, enunciados de pruebas y binarios personales
+*.pdf
+Desafío*.pdf
+presentation/*_MRNF_*.*
+
+# Notebooks temporales en la raíz (los entregables oficiales viven en notebooks/)
+/*.ipynb
+
+# Ambientes y credenciales
+.env
+.env.*
+venv/
+env/
+.venv/
+
+# Caches de pruebas y linteo
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs y configuración local
+.vscode/
+.idea/

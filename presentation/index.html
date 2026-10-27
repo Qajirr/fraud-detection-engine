@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomous Card Fraud Detection Engine — Portfolio Case Study</title>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1f2937;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --border: #374151;
+      --border-light: #4b5563;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "Fira Code", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.55;
+      padding: 0 0 60px;
+    }
+
+    header {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 24px 28px;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .badge-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-green { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-purple { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 900px;
+      margin-bottom: 20px;
+    }
+
+    .header-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--accent-blue); color: white; border: none; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: var(--bg-surface-elevated); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #374151; }
+
+    /* KPI SCORECARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin: 28px 0;
+    }
+
+    .kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-blue);
+    }
+
+    .kpi-card.green::before { background: var(--accent-green); }
+    .kpi-card.amber::before { background: var(--accent-amber); }
+    .kpi-card.indigo::before { background: var(--accent-indigo); }
+
+    .kpi-title { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .kpi-val { font-size: 26px; font-weight: 800; margin: 4px 0; color: #fff; }
+    .kpi-sub { font-size: 12px; color: var(--text-dim); }
+
+    /* TAB NAVIGATION */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      padding-bottom: 2px;
+      margin-bottom: 28px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.03); }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    /* TAB PANELS */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .panel-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 14px; color: #f3f4f6; }
+    p { margin-bottom: 14px; color: #d1d5db; }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+
+    .chart-container {
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      min-height: 480px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    }
+
+    .chart-container iframe {
+      width: 100%;
+      height: 480px;
+      border: none;
+      display: block;
+    }
+
+    /* DATA TABLES */
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    .custom-table th {
+      background: #1f2937;
+      color: #e5e7eb;
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .custom-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #283344;
+      color: #cbd5e1;
+    }
+
+    .custom-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+    .custom-table tr.highlight { background: rgba(16, 185, 129, 0.1); font-weight: 600; }
+    .custom-table tr.highlight td { color: #a7f3d0; }
+
+    /* CODE & EQUATIONS */
+    .math-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-left: 4px solid var(--accent-indigo);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: #e2e8f0;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="badge-strip">
+        <span class="badge badge-blue">Fintech ML Systems</span>
+        <span class="badge badge-green">Asymmetric Cost Optimization</span>
+        <span class="badge badge-purple">Zero Data Leakage Polars</span>
+        <span class="badge badge-blue">Out-of-Time Validated</span>
+      </div>
+      <h1>Autonomous Card Fraud Detection & Financial Utility Engine</h1>
+      <p class="subtitle">
+        A production-grade machine learning system trained on 1,000,000 credit/debit card transactions. 
+        Engineered with causal retrospective features in Polars, tree ensembles, tabular self-attention, and directly optimized against a real-world asymmetric business utility function.
+      </p>
+      <div class="header-links">
+        <a href="../CASE_STUDY.md" class="btn btn-primary" target="_blank">📄 Read Full Case Study (White Paper)</a>
+        <a href="presentacion_4_diapositivas.html" class="btn btn-secondary" target="_blank">📊 Open 4-Slide Executive Deck</a>
+        <a href="../notebooks/eda_y_modelado_fraude.ipynb" class="btn btn-secondary" target="_blank">📓 Open Master Notebook</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- METRIC SCORECARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card green">
+        <div class="kpi-title">Net Value Preserved</div>
+        <div class="kpi-val">+US$ 204,930</div>
+        <div class="kpi-sub">Test OOT savings vs passive baseline</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-title">Net Financial Profit</div>
+        <div class="kpi-val">+US$ 39,030</div>
+        <div class="kpi-sub">Champion V3 with stateful plastic freeze</div>
+      </div>
+      <div class="kpi-card indigo">
+        <div class="kpi-title">Champion PR-AUC</div>
+        <div class="kpi-val">0.7852</div>
+        <div class="kpi-sub">Up from 0.459 baseline (+71% gain)</div>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-title">Friction Reduction</div>
+        <div class="kpi-val">-45.1% FP</div>
+        <div class="kpi-sub">Only 14 false alerts/day across 325k tx</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Autonomous Precision</div>
+        <div class="kpi-val">91.5%</div>
+        <div class="kpi-sub">Red Zone automated hard block rate</div>
+      </div>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab(0)">1. Business ROI & Loss Function</button>
+      <button class="tab-btn" onclick="switchTab(1)">2. Exploratory Data Intelligence</button>
+      <button class="tab-btn" onclick="switchTab(2)">3. Causal Feature Engineering</button>
+      <button class="tab-btn" onclick="switchTab(3)">4. Model Benchmarking & Cuts</button>
+      <button class="tab-btn" onclick="switchTab(4)">5. 3-Tier Risk Triage</button>
+      <button class="tab-btn" onclick="switchTab(5)">6. Explainability & Compliance</button>
+      <button class="tab-btn" onclick="switchTab(6)">7. Production Architecture</button>
+    </div>
+
+    <!-- TAB 1: BUSINESS ROI -->
+    <div class="tab-panel active">
+      <div class="panel-box">
+        <h2>Asymmetric Financial Loss Function & Decision Matrix</h2>
+        <p>
+          In banking and fintech risk operations, standard symmetric metrics (Accuracy, ROC-AUC) hide critical financial dynamics.
+          Failing to stop a fraudulent charge results in chargeback write-offs and dispute fees (<strong>-US$ 180</strong>), whereas falsely declining a customer's card incurs operational customer support costs (<strong>-US$ 30</strong>).
+        </p>
+
+        <div class="math-card">
+          Net Utility = (120 × True Positives) - (30 × False Positives) - (180 × False Negatives) + (0 × True Negatives)<br>
+          Asymmetric Loss Penalty Ratio = Cost(FN) / Cost(FP) = 180 / 30 = 6 : 1
+        </div>
+
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Strategy Evaluated (May 2026 OOT: 325,304 tx)</th>
+              <th>PR-AUC</th>
+              <th>Optimal Cut (T*)</th>
+              <th>True Positives (VP)</th>
+              <th>False Positives (FP)</th>
+              <th>False Negatives (FN)</th>
+              <th>Net Financial Utility</th>
+              <th>Savings vs. Inaction</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>0. Inaction (No Model)</strong></td>
+              <td>—</td>
+              <td>—</td>
+              <td>0 (0%)</td>
+              <td>0</td>
+              <td>945</td>
+              <td>-US$ 170,100</td>
+              <td>US$ 0</td>
+            </tr>
+            <tr>
+              <td><strong>1. LightGBM Baseline</strong></td>
+              <td>0.4592</td>
+              <td>0.099</td>
+              <td>480 (51%)</td>
+              <td>732</td>
+              <td>465</td>
+              <td>-US$ 47,940</td>
+              <td>+US$ 122,160</td>
+            </tr>
+            <tr>
+              <td><strong>2. PyTorch Self-Attention Tabular Net</strong></td>
+              <td>0.4987</td>
+              <td>0.129</td>
+              <td>532 (56%)</td>
+              <td>1,192</td>
+              <td>413</td>
+              <td>-US$ 46,260</td>
+              <td>+US$ 123,840</td>
+            </tr>
+            <tr>
+              <td><strong>3. Tuned XGBoost (Features V1)</strong></td>
+              <td>0.6534</td>
+              <td>0.268</td>
+              <td>555 (59%)</td>
+              <td>763</td>
+              <td>390</td>
+              <td>-US$ 26,490</td>
+              <td>+US$ 143,610</td>
+            </tr>
+            <tr>
+              <td><strong>4. Tuned XGBoost (Features V2)</strong></td>
+              <td>0.6641</td>
+              <td>0.280</td>
+              <td>569 (60%)</td>
+              <td>664</td>
+              <td>376</td>
+              <td>-US$ 19,320</td>
+              <td>+US$ 150,780</td>
+            </tr>
+            <tr class="highlight">
+              <td><strong>5. Champion Model (Feature Distillation 3.0)</strong></td>
+              <td><strong>0.7852</strong></td>
+              <td><strong>0.128</strong></td>
+              <td><strong>725 (77%)</strong></td>
+              <td><strong>419 (63% Prec)</strong></td>
+              <td><strong>220</strong></td>
+              <td><strong>+US$ 34,830</strong></td>
+              <td><strong>+US$ 204,930</strong></td>
+            </tr>
+            <tr class="highlight">
+              <td><strong>6. Champion V3 + Stateful Plastic Freezing</strong></td>
+              <td><strong>0.7852</strong></td>
+              <td><strong>0.128</strong></td>
+              <td><strong>739 (78%)</strong></td>
+              <td><strong>419 (64% Prec)</strong></td>
+              <td><strong>206</strong></td>
+              <td><strong>+US$ 39,030</strong></td>
+              <td><strong>+US$ 209,130</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="split-grid">
+        <div class="chart-container">
+          <iframe src="figures/09_curva_utilidad_vs_umbral.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/10_matriz_confusion_optima.html"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: EXPLORATORY DATA -->
+    <div class="tab-panel">
+      <div class="panel-box">
+        <h2>Behavioral Profiling & Empirical Risk Drivers (EDA)</h2>
+        <p>
+          Exploration of 1,000,000 transactions uncovered distinct non-linear risk signatures across Merchant Category Codes (MCC), physical capture modes, structural missingness, and cross-border geographic jumps.
+        </p>
+      </div>
+      <div class="split-grid">
+        <div class="chart-container">
+          <iframe src="figures/04_riesgo_mcc.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/05_matriz_canal_entrada.html"></iframe>
+        </div>
+      </div>
+      <div class="split-grid" style="margin-top: 20px;">
+        <div class="chart-container">
+          <iframe src="figures/06_descalce_geografico.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/01_nulos_condicionales.html"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: FEATURE ENGINEERING -->
+    <div class="tab-panel">
+      <div class="panel-box">
+        <h2>Causal Feature Engineering & Resolving the "Patient Zero" Blind Spot</h2>
+        <p>
+          Standard retrospective velocity aggregations (1h, 24h, 7d) fail to detect the <strong>first fraud of an attack burst</strong> ("Patient Zero"), accounting for 80.3% of false negatives in V1.
+          Our Feature Distillation 3.0 introduces zero-leakage first-time-seen flags, lifetime account maximum comparisons, and dormancy shock indices in Polars.
+        </p>
+      </div>
+      <div class="split-grid">
+        <div class="chart-container">
+          <iframe src="figures/20_fn_anatomia_y_secuencia.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/22_rescate_fn_destilacion_v3.html"></iframe>
+        </div>
+      </div>
+      <div class="split-grid" style="margin-top: 20px;">
+        <div class="chart-container">
+          <iframe src="figures/17_comparacion_features_v2.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/11_feature_importance.html"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: BENCHMARK -->
+    <div class="tab-panel">
+      <div class="panel-box">
+        <h2>Model Benchmarking & Probability Calibration</h2>
+        <p>
+          Evaluation on the blind out-of-time test partition (May 2026: 325,304 transactions). 
+          Isotonic calibration aligned predicted probabilities with empirical class frequencies, achieving an Expected Calibration Error of ~0.0000.
+        </p>
+      </div>
+      <div class="split-grid">
+        <div class="chart-container">
+          <iframe src="figures/07_precision_recall_curves.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/08_roc_curves.html"></iframe>
+        </div>
+      </div>
+      <div class="split-grid" style="margin-top: 20px;">
+        <div class="chart-container">
+          <iframe src="figures/13_utilidad_vs_umbral_optuna.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/03_estacionalidad_horaria.html"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: TRIAGE -->
+    <div class="tab-panel">
+      <div class="panel-box">
+        <h2>3-Tier Risk Triage Policy: Green, Yellow & Red Zones</h2>
+        <p>
+          Rather than imposing a single rigid threshold, continuous Bayesian optimization establishes dual decision cuts:
+          <strong>Green Zone (p &lt; 0.274)</strong> auto-authorizes 99.5% of volume; 
+          <strong>Yellow Zone (0.274 &le; p &lt; 0.842)</strong> routes ~31 cases/day to operational review or step-up authentication;
+          <strong>Red Zone (p &ge; 0.842)</strong> enforces autonomous hard blocks with <strong>91.5% precision</strong>.
+        </p>
+      </div>
+      <div class="split-grid">
+        <div class="chart-container">
+          <iframe src="figures/18_triage_zonas_semaforo.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/19_triage_superficie_utilidad.html"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: EXPLAINABILITY -->
+    <div class="tab-panel">
+      <div class="panel-box">
+        <h2>Regulatory Transparency, TreeSHAP & Attention Maps</h2>
+        <p>
+          Every decline must provide auditable, mathematical justification for dispute handling. 
+          TreeSHAP computes exact log-odds attributions per transaction, highlighting signal gaps between detected true positives and missed frauds.
+        </p>
+      </div>
+      <div class="split-grid">
+        <div class="chart-container">
+          <iframe src="figures/14_shap_summary_global.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/21_fn_vs_vp_shap_gap.html"></iframe>
+        </div>
+      </div>
+      <div class="split-grid" style="margin-top: 20px;">
+        <div class="chart-container">
+          <iframe src="figures/12_matriz_atencion_fraude.html"></iframe>
+        </div>
+        <div class="chart-container">
+          <iframe src="figures/15_shap_dependence_amount.html"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: ARCHITECTURE -->
+    <div class="tab-panel">
+      <div class="panel-box">
+        <h2>Production Architecture, Engineering & Reliability</h2>
+        <p>
+          Engineered under strict SOLID &amp; DRY principles. All production Python modules in <code>src/</code> remain strictly under 300 lines of code.
+          Verified with 56 passing pytest unit tests and zero ruff lint errors.
+        </p>
+
+        <div class="math-card">
+          Target Latency Budget (p99 SLA): &lt; 25 ms<br>
+          Feature Store Ingestion: Apache Kafka + Flink Streaming Windows<br>
+          Online Cache: Redis Cluster (Hash &amp; Sorted Set for Rolling Windows)<br>
+          Inference Engine: FastAPI / Triton Server with C-Optimized XGBoost Engine<br>
+          Codebase Quality: 56/56 Unit Tests Passing (100%), 0 Ruff Lint Errors
+        </div>
+
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Module Path</th>
+              <th>Responsibility</th>
+              <th>Lines of Code</th>
+              <th>Key Design Principle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>src/config.py</code></td>
+              <td>Business constants, cost matrices, and dataset paths</td>
+              <td>94 lines</td>
+              <td>Single Source of Truth</td>
+            </tr>
+            <tr>
+              <td><code>src/features/builder.py</code></td>
+              <td>Polars pipeline orchestrator for V1, V2, and V3</td>
+              <td>166 lines</td>
+              <td>Zero Temporal Leakage</td>
+            </tr>
+            <tr>
+              <td><code>src/models/threshold.py</code></td>
+              <td>Vectorized O(N log N) financial utility optimization</td>
+              <td>219 lines</td>
+              <td>Performance & Vectorization</td>
+            </tr>
+            <tr>
+              <td><code>src/models/triage.py</code></td>
+              <td>Bayesian Optuna dual-threshold triage engine</td>
+              <td>240 lines</td>
+              <td>Operational Decoupling</td>
+            </tr>
+            <tr>
+              <td><code>src/models/fn_analysis.py</code></td>
+              <td>Diagnostic and rescue engine for False Negatives</td>
+              <td>273 lines</td>
+              <td>Single Responsibility Principle</td>
+            </tr>
+            <tr>
+              <td><code>tests/</code></td>
+              <td>56 unit tests verifying pipeline stability</td>
+              <td>14 test suites</td>
+              <td>100% CI Quality Gate</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      Autonomous Card Fraud Detection Engine &mdash; Portfolio Case Study &bull; Built with Python, Polars, Scikit-learn, XGBoost, PyTorch, Optuna, Plotly &amp; Pytest.
+    </div>
+  </footer>
+
+  <script>
+    function switchTab(index) {
+      const tabs = document.querySelectorAll('.tab-btn');
+      const panels = document.querySelectorAll('.tab-panel');
+      tabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+      });
+      panels.forEach((panel, i) => {
+        panel.classList.toggle('active', i === index);
+      });
+    }
+  </script>
+</body>
+</html>

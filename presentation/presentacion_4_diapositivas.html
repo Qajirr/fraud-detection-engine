@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detección de Fraude Transaccional con Tarjeta & Optimización de Utilidad — Caso de Estudio</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    :root {
+      --navy: #0f172a;
+      --slate: #334155;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --bg-light: #f8fafc;
+      --blue: #2563eb;
+      --green: #059669;
+      --red: #dc2626;
+      --amber: #d97706;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background-color: #0b1120;
+      color: var(--navy);
+      line-height: 1.35;
+      padding: 20px 0 50px;
+    }
+
+    .toolbar {
+      max-width: 1280px;
+      margin: 0 auto 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #e2e8f0;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .toolbar button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .slide {
+      width: 1280px;
+      height: 720px;
+      margin: 0 auto 28px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    .slide-header {
+      background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      padding: 15px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 4px solid var(--blue);
+    }
+
+    .slide-header h1 { font-size: 21px; font-weight: 700; }
+    .slide-header p { font-size: 12px; color: #bfdbfe; margin-top: 2px; }
+
+    .slide-badge {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .slide-body {
+      padding: 16px 32px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .kpi-card {
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      padding: 9px 14px;
+    }
+
+    .kpi-card.green { border-left-color: var(--green); background: #f0fdf4; }
+    .kpi-card.red { border-left-color: var(--red); background: #fef2f2; }
+    .kpi-card.amber { border-left-color: var(--amber); background: #fffbeb; }
+
+    .kpi-label { font-size: 10.5px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .kpi-value { font-size: 21px; font-weight: 800; color: var(--navy); margin: 1px 0; }
+    .kpi-sub { font-size: 11px; color: var(--slate); }
+
+    .split-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.12fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .panel h3 {
+      font-size: 14px;
+      color: #1e3a8a;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 5px;
+    }
+
+    .panel ul {
+      padding-left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--slate);
+    }
+
+    .panel li strong { color: var(--navy); }
+
+    .chart-box {
+      width: 100%;
+      flex: 1;
+      min-height: 360px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.8px;
+    }
+
+    th {
+      background: var(--navy);
+      color: #fff;
+      text-align: left;
+      padding: 7px 9px;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 6.5px 9px;
+      border-bottom: 1px solid #e2e8f0;
+      color: var(--slate);
+    }
+
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr.highlight td {
+      background: #ecfdf5 !important;
+      font-weight: 700;
+      color: #065f46;
+      border-top: 1.5px solid #10b981;
+      border-bottom: 1.5px solid #10b981;
+    }
+
+    .slide-footer {
+      background: #f1f5f9;
+      border-top: 1px solid var(--border);
+      padding: 7px 32px;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body { background: none; padding: 0; }
+      .toolbar { display: none; }
+      .slide { margin: 0; box-shadow: none; border-radius: 0; width: 100%; height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div><strong>Sistema de Detección de Fraude Transaccional</strong> — Resumen Ejecutivo de Negocio & Optimización Financiera</div>
+    <button onclick="window.print()">🖨️ Exportar a PDF (16:9)</button>
+  </div>
+
+  <!-- SLIDE 1 -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <h1>1. Principales Insights de los Datos (EDA Out-of-Time)</h1>
+        <p>Marzo–Abril 2026 (674.696 tx, 0% Leakage) | Función Financiera: +US$120 VP − US$30 FP − US$180 FN (Asimetría 6:1)</p>
+      </div>
+      <div class="slide-badge">Slide 1 / 4</div>
+    </div>
+
+    <div class="slide-body">
+      <div class="kpi-strip">
+        <div class="kpi-card red">
+          <div class="kpi-label">Volumen / Tasa Fraude</div>
+          <div class="kpi-value">1M tx | 0,31%</div>
+          <div class="kpi-sub">3.113 fraudes (~1 cada 321 tx)</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-label">Ticket Mediano</div>
+          <div class="kpi-value">2,58x Mayor</div>
+          <div class="kpi-sub">Fraude US$ 93 vs Legítima US$ 36</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Nulos Estructurales</div>
+          <div class="kpi-value">59% Físicos</div>
+          <div class="kpi-sub">100% nulos POS/ATM; 0% Digital</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">Grafos (NetworkX)</div>
+          <div class="kpi-value">251 Anillos</div>
+          <div class="kpi-sub">11.847 dispositivos multitarjeta</div>
+        </div>
+      </div>
+
+      <div class="split-2">
+        <div class="panel">
+          <h3>5 Hallazgos Clave del EDA</h3>
+          <ul>
+            <li><strong>Nulos por Canal:</strong> Ausencia de <code>IP/Device</code> es 100% física (<code>POS/ATM</code>) y 0% digital (<code>ECOMMERCE/APP</code>).</li>
+            <li><strong>Rubros Críticos (MCC):</strong> Cripto/Cuasi-efectivo (<code>6051</code>: <strong>54,0%</strong>), Apuestas (<code>7995</code>: <strong>29,9%</strong>) y Joyerías (<code>5944</code>: <strong>21,6%</strong>).</li>
+            <li><strong>Clonación Física (POS):</strong> Banda magnética (<code>swipe</code>, <strong>2,23%</strong>) multiplica <strong>31x</strong> el riesgo frente a <code>chip</code> (<strong>0,07%</strong>).</li>
+            <li><strong>Horario Nocturno:</strong> Entre <strong>01:00 y 05:59 hrs</strong> cae el tráfico legítimo y se dispara el riesgo relativo.</li>
+            <li><strong>Descalce Geográfico:</strong> <code>merchant_country != ip_country</code> eleva el fraude <strong>8,1x (0,81% vs 0,10%)</strong>.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Gráfico 1: Tasa de Fraude (%) en Segmentos Críticos vs. Base</h3>
+          <div id="chart1" class="chart-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Caso de Estudio | Data Science & Fintech Risk Modeling</span>
+      <span>notebooks/entregable.ipynb — Parte I</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 2 -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <h1>2. Feature Engineering y Destilación Causal 3.0 (Polars, 0% Leakage)</h1>
+        <p>Diagnóstico de Falsos Negativos (Parte IV): 80,3% de los FN en V1 ocurrían en el 1er fraude de la tarjeta ("Paciente Cero")</p>
+      </div>
+      <div class="slide-badge">Slide 2 / 4</div>
+    </div>
+
+    <div class="slide-body">
+      <div class="split-2">
+        <div class="panel">
+          <h3>Evolución de Variables (De 34 en V1 a 47 en V3)</h3>
+          <ul>
+            <li><strong>V1–V2 Velocidad y Ráfagas:</strong> Ventanas retrospectivas (<code>1h, 6h, 24h, 7d</code>) por tarjeta/cliente y <code>burst_ratio_1h_24h</code>.</li>
+            <li><strong>V1–V2 Geo y Grafos (24h):</strong> Salto geográfico imposible (<code>&lt;2h</code>) y tarjetas distintas por <code>device_id / ip_address</code>.</li>
+            <li><strong>Diagnóstico de 390 FN (V1):</strong> <strong>313 FN (80,3%)</strong> eran el 1er golpe tras ~6 días sin uso (<code>card_tx_count_1h = 0</code>).</li>
+            <li><strong>V3 Familia A (Shock Histórico):</strong> Ratio vs. máximo histórico de tarjeta (<strong>2,52x en FN</strong>), Z-Score por segmento y <code>dormancy_shock</code>.</li>
+            <li><strong>V3 Familia B (First-Time Seen):</strong> <code>is_new_device_for_customer</code> (<strong>48,2% en FN vs 4,2% en legítimas → 11,5x</strong>) y país nuevo (<strong>30,3%</strong>).</li>
+            <li><strong>V3 Familia C (Comercio 24h):</strong> <code>merchant_distinct_cards_24h</code> para capturar comercios comprometidos.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Gráfico 2: Recall en Test OOT según Posición en la Ráfaga (V1 vs V3)</h3>
+          <div id="chart2" class="chart-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Caso de Estudio | Data Science & Fintech Risk Modeling</span>
+      <span>notebooks/entregable.ipynb — Partes II y IV</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 3 -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <h1>3. Metodología Utilizada</h1>
+        <p>Split Cronológico Out-of-Time | Preprocesamiento sin Fuga | Calibración Isotónica | Optimización Financiera T*</p>
+      </div>
+      <div class="slide-badge">Slide 3 / 4</div>
+    </div>
+
+    <div class="slide-body">
+      <div class="split-2">
+        <div class="panel">
+          <h3>Diseño Experimental y Regla de Decisión</h3>
+          <ul>
+            <li><strong>1. Split Out-of-Time Estricto:</strong> <code>Train</code> (Mar–15 Abr: 507k tx) → <code>Val OOT</code> (16–30 Abr: 167k tx) → <code>Test OOT</code> (Mayo: 325k tx).</li>
+            <li><strong>2. Pipeline scikit-learn:</strong> <code>CyclicalTime</code> (sin/cos), <code>TargetEncoder</code> OOF (<code>cv=5</code>) en MCC, y <code>log1p + RobustScaler</code>.</li>
+            <li><strong>3. Calibración Isotónica:</strong> Corrige el peso de clase en Val OOT alcanzando <strong>Brier = 0,00150</strong> (<code>ECE = 0,0000</code>).</li>
+            <li><strong>4. Corte Financiero Óptimo ($T^*$):</strong> Como un FN (-US$ 180) cuesta 6x más que un FP (-US$ 30), el umbral óptimo se ubica en <strong>$T^* = 0,128$</strong>.</li>
+            <li><strong>5. Operación y Gobernanza:</strong> Triage Tri-Zona + <strong>Bloqueo de Plástico</strong> tras 1er VP + Explicabilidad <strong>TreeSHAP</strong>.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Gráfico 3: Evolución de PR-AUC en Validación OOT vs. Test OOT</h3>
+          <div id="chart3" class="chart-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Caso de Estudio | Data Science & Fintech Risk Modeling</span>
+      <span>notebooks/entregable.ipynb — Partes III y IV</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 4 -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <h1>4. Resultados e Impacto Económico (Test Out-of-Time: Mayo 2026)</h1>
+        <p>Evaluación ciega en 325.304 tx (945 fraudes) — De pérdida residual (-US$ 26,5k) a Utilidad Neta Positiva (+US$ 39,0k)</p>
+      </div>
+      <div class="slide-badge">Slide 4 / 4</div>
+    </div>
+
+    <div class="slide-body">
+      <div class="kpi-strip">
+        <div class="kpi-card green">
+          <div class="kpi-label">Utilidad Neta Directa</div>
+          <div class="kpi-value">+US$ 34.830</div>
+          <div class="kpi-sub">+US$ 39.030 con bloqueo plástico</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">Ahorro vs. Inacción</div>
+          <div class="kpi-value">+US$ 204.930</div>
+          <div class="kpi-sub">Revertimos pérdida de -US$ 170,1k</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Recall / Precisión V3</div>
+          <div class="kpi-value">76,7% / 63,4%</div>
+          <div class="kpi-sub">725 VP capturados | PR-AUC 0,785</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-label">Menos Fricción Cliente</div>
+          <div class="kpi-value">-45,1% FP vs V1</div>
+          <div class="kpi-sub">Baja de 763 a 419 FP (~14/día)</div>
+        </div>
+      </div>
+
+      <div class="split-2">
+        <div class="panel">
+          <h3>Resumen Financiero en Test OOT (Mayo 2026)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Estrategia Evaluada</th>
+                <th>PR-AUC</th>
+                <th>T*</th>
+                <th>VP (Recall)</th>
+                <th>FP (Prec)</th>
+                <th>Utilidad Neta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>0. Sin Modelo (Base)</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>0 (0%)</td>
+                <td>0</td>
+                <td>-US$ 170.100</td>
+              </tr>
+              <tr>
+                <td><strong>1. XGBoost V1 (0.50)</strong></td>
+                <td>0,653</td>
+                <td>0,500</td>
+                <td>463 (49%)</td>
+                <td>226 (67%)</td>
+                <td>-US$ 37.980</td>
+              </tr>
+              <tr>
+                <td><strong>2. XGBoost V1 ($T^*$)</strong></td>
+                <td>0,653</td>
+                <td>0,268</td>
+                <td>555 (59%)</td>
+                <td>763 (42%)</td>
+                <td>-US$ 26.490</td>
+              </tr>
+              <tr>
+                <td><strong>3. XGBoost V2 ($T^*$)</strong></td>
+                <td>0,664</td>
+                <td>0,280</td>
+                <td>569 (60%)</td>
+                <td>664 (46%)</td>
+                <td>-US$ 19.320</td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>4. Campeón V3 (Tuned)</strong></td>
+                <td><strong>0,785</strong></td>
+                <td><strong>0,128</strong></td>
+                <td><strong>725 (77%)</strong></td>
+                <td><strong>419 (63%)</strong></td>
+                <td><strong>+US$ 34.830</strong></td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>5. V3 + Bloqueo Tarjeta</strong></td>
+                <td><strong>0,785</strong></td>
+                <td><strong>0,128</strong></td>
+                <td><strong>739 (78%)</strong></td>
+                <td><strong>419 (64%)</strong></td>
+                <td><strong>+US$ 39.030</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>Gráfico 4: Utilidad Neta Mensual del Emisor (US$, Mayo 2026)</h3>
+          <div id="chart4" class="chart-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Caso de Estudio | Data Science & Fintech Risk Modeling</span>
+      <span>notebooks/entregable.ipynb — Parte IV (Figura 22)</span>
+    </div>
+  </section>
+
+  <script>
+    const commonLayout = {
+      template: "plotly_white",
+      margin: { t: 18, r: 24, b: 42, l: 135 },
+      font: { family: "Segoe UI, sans-serif", size: 11.5, color: "#0f172a" },
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)"
+    };
+
+    // Chart 1: Fraud Rate by Segment
+    Plotly.newPlot("chart1", [{
+      type: "bar",
+      orientation: "h",
+      y: ["Tasa Base Global", "POS Chip", "País != IP", "POS Swipe (Banda)", "MCC 5944 Joyerías", "MCC 7995 Apuestas", "MCC 6051 Cripto"],
+      x: [0.32, 0.07, 0.81, 2.23, 21.55, 29.87, 54.02],
+      text: ["0,32%", "0,07%", "0,81%", "2,23%", "21,55%", "29,87%", "54,02%"],
+      textposition: "outside",
+      marker: { color: ["#64748b", "#059669", "#d97706", "#ea580c", "#dc2626", "#dc2626", "#991b1b"] }
+    }], {
+      ...commonLayout,
+      xaxis: { title: "Tasa de Fraude (%)", range: [0, 62] }
+    }, { displayModeBar: false });
+
+    // Chart 2: Recall by Burst Sequence
+    Plotly.newPlot("chart2", [
+      {
+        type: "bar",
+        name: "Modelo V1 (34 vars)",
+        x: ["1er Fraude ('Paciente Cero')", "2do Fraude", "3er+ Fraude", "Recall Global OOT"],
+        y: [28.9, 82.9, 87.2, 58.7],
+        text: ["28,9%", "82,9%", "87,2%", "58,7%"],
+        textposition: "outside",
+        marker: { color: "#93c5fd" }
+      },
+      {
+        type: "bar",
+        name: "Campeón V3 (47 vars)",
+        x: ["1er Fraude ('Paciente Cero')", "2do Fraude", "3er+ Fraude", "Recall Global OOT"],
+        y: [59.2, 84.4, 98.5, 76.7],
+        text: ["59,2%", "84,4%", "98,5%", "76,7%"],
+        textposition: "outside",
+        marker: { color: "#059669" }
+      }
+    ], {
+      ...commonLayout,
+      margin: { t: 32, r: 20, b: 45, l: 50 },
+      barmode: "group",
+      legend: { orientation: "h", y: 1.12, x: 0 },
+      yaxis: { title: "Recall (%)", range: [0, 112] }
+    }, { displayModeBar: false });
+
+    // Chart 3: PR-AUC Benchmark
+    Plotly.newPlot("chart3", [
+      {
+        type: "bar",
+        name: "Validación OOT (Abril)",
+        x: ["LGBM Base", "LGBM Tuned", "XGBoost V1", "XGBoost V2", "XGBoost V3 Champion"],
+        y: [0.459, 0.559, 0.614, 0.629, 0.751],
+        text: ["0,459", "0,559", "0,614", "0,629", "0,751"],
+        textposition: "outside",
+        marker: { color: "#93c5fd" }
+      },
+      {
+        type: "bar",
+        name: "Test OOT (Mayo)",
+        x: ["LGBM Base", "LGBM Tuned", "XGBoost V1", "XGBoost V2", "XGBoost V3 Champion"],
+        y: [0.495, 0.598, 0.653, 0.664, 0.785],
+        text: ["0,495", "0,598", "0,653", "0,664", "0,785"],
+        textposition: "outside",
+        marker: { color: "#2563eb" }
+      }
+    ], {
+      ...commonLayout,
+      margin: { t: 32, r: 20, b: 45, l: 50 },
+      barmode: "group",
+      legend: { orientation: "h", y: 1.12, x: 0 },
+      yaxis: { title: "PR-AUC (Average Precision)", range: [0, 0.92] }
+    }, { displayModeBar: false });
+
+    // Chart 4: Net Financial Profit
+    Plotly.newPlot("chart4", [{
+      type: "bar",
+      x: ["Inacción", "V1 (0.50)", "V1 (T*)", "V2 (T*)", "Campeón V3", "V3 + Bloqueo"],
+      y: [-170100, -37980, -26490, -19320, 34830, 39030],
+      text: ["-$170,1k", "-$38,0k", "-$26,5k", "-$19,3k", "+$34,8k", "+$39,0k"],
+      textposition: "outside",
+      marker: { color: ["#dc2626", "#d97706", "#d97706", "#d97706", "#059669", "#047857"] }
+    }], {
+      ...commonLayout,
+      margin: { t: 25, r: 20, b: 45, l: 65 },
+      yaxis: { title: "Utilidad Neta (US$)", range: [-198000, 68000], zeroline: true, zerolinewidth: 2, zerolinecolor: "#0f172a" }
+    }, { displayModeBar: false });
+  </script>
+</body>
+</html>
